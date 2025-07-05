@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import ru.shift.userimporter.config.StorageProperties;
+import ru.shift.userimporter.core.exception.ConflictException;
 import ru.shift.userimporter.core.model.FileMeta;
 import ru.shift.userimporter.core.model.FileStatus;
 import ru.shift.userimporter.core.repository.FileMetaRepository;
@@ -29,7 +30,7 @@ public class FileService {
         /* 1. hash + дубликаты */
         String sha1 = DigestUtils.sha1Hex(file.getInputStream());
         repo.findByHash(sha1).ifPresent(f -> {
-            throw new IllegalStateException("Файл уже был загружен");
+            throw new ConflictException("Файл уже был загружен");
         });
 
         /* 2. копируем на диск */

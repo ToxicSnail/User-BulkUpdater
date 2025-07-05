@@ -6,6 +6,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import ru.shift.userimporter.core.exception.ConflictException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -22,9 +23,9 @@ public class GlobalExceptionHandler {
         return new ApiError("Validation failed: " + ex.getErrorCount() + " error(s)");
     }
 
-    @ExceptionHandler(IllegalStateException.class)
+    @ExceptionHandler(ConflictException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
-    public ApiError handleConflict(IllegalStateException ex) {
+    public ApiError handleConflict(ConflictException ex) {
         return new ApiError(ex.getMessage());
     }
 

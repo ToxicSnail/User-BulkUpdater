@@ -9,6 +9,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import ru.shift.userimporter.core.exception.ConflictException;
 import ru.shift.userimporter.core.exception.LineValidator;
 import ru.shift.userimporter.core.model.*;
 import ru.shift.userimporter.core.repository.*;
@@ -35,7 +36,7 @@ public class FileProcessingService {
                 .orElseThrow(() -> new EntityNotFoundException("file not found"));
 
         if (meta.getStatus() != FileStatus.NEW) {
-            throw new IllegalStateException("processing already started");
+            throw new ConflictException("processing already started");
         }
 
         meta.setStatus(FileStatus.IN_PROGRESS);
