@@ -8,20 +8,21 @@ import ru.shift.userimporter.api.dto.DetailedFileStatisticDto;
 import ru.shift.userimporter.api.dto.FileResponseDto;
 import ru.shift.userimporter.api.mapper.FileMapper;
 import ru.shift.userimporter.core.model.FileStatus;
-import java.util.List;
-import ru.shift.userimporter.core.repository.FileMetaRepository;
+import ru.shift.userimporter.core.model.UploadedFile;
+import ru.shift.userimporter.core.repository.UploadedFileRepository;
 
+import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class StatisticService {
-    private final FileMetaRepository repo;
-    private final FileMapper mapper;
+    private final UploadedFileRepository repo;
+    private final FileMapper         mapper;
 
     @Transactional(readOnly = true)
     public DetailedFileStatisticDto detailed(Integer fileId) {
-        return repo.findById(fileId)
-                .map(mapper::toDetailedDto)
+        UploadedFile file = repo.findById(fileId)
                 .orElseThrow(() -> new EntityNotFoundException("Файл не найден"));
+        return mapper.toDetailedDto(file);
     }
 
     @Transactional(readOnly = true)

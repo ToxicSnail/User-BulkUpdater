@@ -1,42 +1,42 @@
 package ru.shift.userimporter.core.model;
 
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Entity
+@Table(name = "uploaded_files")
 @Getter
 @Setter
 @NoArgsConstructor
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@ToString(exclude = "errors")
-@Entity
-@Table(name = "uploaded_files")
-public class FileMeta {
+public class UploadedFile {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @EqualsAndHashCode.Include
     private Integer id;
 
-    @Column(name = "original_filename", nullable = false, length = 50)
+    @Column(name = "original_filename", length = 100, nullable = false)
     private String originalFilename;
 
-    @Column(name = "storage_path", nullable = false, length = 512, unique = true)
+    @Column(name = "storage_path", length = 512, nullable = false, unique = true)
     private String storagePath;
 
-    @Column(nullable = false, length = 40)
+    @Column(name = "hash", length = 40, nullable = false)
     private String hash;
 
     @Enumerated(EnumType.STRING)
-    @Column(length = 50)
+    @Column(length = 50, nullable = false)
     private FileStatus status = FileStatus.NEW;
 
-    private Integer totalRows;
-    private Integer processedRows;
-    private Integer validRows;
-    private Integer invalidRows;
+    @Column(name = "inserted_rows", nullable = false)
+    private int insertedRows;
+
+    @Column(name = "updated_rows", nullable = false)
+    private int updatedRows;
 
     @OneToMany(mappedBy = "file", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProcessingError> errors = new ArrayList<>();

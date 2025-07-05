@@ -41,10 +41,8 @@ CREATE TABLE uploaded_files
     status            VARCHAR(50)  NOT NULL DEFAULT 'NEW'
         CONSTRAINT chk_status_value CHECK (status IN ('NEW', 'IN_PROGRESS', 'DONE', 'FAILED')),
     hash              VARCHAR(40)  NOT NULL,
-    total_rows        INTEGER,
-    processed_rows    INTEGER,
-    valid_rows        INTEGER,
-    invalid_rows      INTEGER
+    inserted_rows     INTEGER,
+    updated_rows      INTEGER
 );
 
 COMMENT ON TABLE uploaded_files IS 'Таблица для хранения информации о загруженных файлах';
@@ -52,17 +50,16 @@ COMMENT ON COLUMN uploaded_files.original_filename IS 'Оригинальное 
 COMMENT ON COLUMN uploaded_files.storage_path IS 'Путь хранения файла';
 COMMENT ON COLUMN uploaded_files.status IS 'Статус обработки файла';
 COMMENT ON COLUMN uploaded_files.hash IS 'Хэш файла';
-COMMENT ON COLUMN uploaded_files.total_rows IS 'Общее количество строк';
-COMMENT ON COLUMN uploaded_files.processed_rows IS 'Общее количество обработанных строк';
-COMMENT ON COLUMN uploaded_files.valid_rows IS 'Количество строк с корректными данными';
-COMMENT ON COLUMN uploaded_files.invalid_rows IS 'Количество строк с не корректными данными';
+COMMENT ON COLUMN uploaded_files.inserted_rows IS 'Количество записей, успешно добавленных в базу клиентов';
+COMMENT ON COLUMN uploaded_files.updated_rows IS 'Количество записей, успешно обновлённых в базе клиентов';
 
 CREATE TABLE file_processing_errors
 (
     id            SERIAL PRIMARY KEY,
-    file_id       INTEGER NOT NULL REFERENCES uploaded_files (id),
-    row_number    INTEGER NOT NULL,
-    error_message TEXT    NOT NULL,
+    file_id       INTEGER     NOT NULL REFERENCES uploaded_files (id),
+    row_number    INTEGER     NOT NULL,
+    error_message TEXT        NOT NULL,
+    error_code    VARCHAR(30) NOT NULL,
     raw_data      TEXT
 );
 
@@ -71,3 +68,4 @@ COMMENT ON COLUMN file_processing_errors.file_id IS 'Идентификатор 
 COMMENT ON COLUMN file_processing_errors.row_number IS 'Номер строки с ошибкой';
 COMMENT ON COLUMN file_processing_errors.error_message IS 'Текст ошибки';
 COMMENT ON COLUMN file_processing_errors.raw_data IS 'Исходное содержимое строки';
+COMMENT ON COLUMN file_processing_errors.error_code IS 'Код ошибки';

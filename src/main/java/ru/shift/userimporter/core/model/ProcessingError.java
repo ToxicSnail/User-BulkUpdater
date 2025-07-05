@@ -7,9 +7,7 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "file_processing_errors")
-@Getter
-@Setter
-@NoArgsConstructor
+@Getter @Setter @NoArgsConstructor
 public class ProcessingError {
 
     @Id
@@ -18,14 +16,17 @@ public class ProcessingError {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "file_id", nullable = false)
-    private FileMeta file;
+    private UploadedFile file;
 
     @Column(name = "row_number", nullable = false)
-    private Integer lineNumber;
+    private int rowNumber;
 
     @Column(name = "error_message", nullable = false)
     private String errorMessage;
 
-    @Column(name = "raw_data", columnDefinition = "TEXT")
+    @Column(name = "error_code", length = 30, nullable = false)
+    private String errorCode;
+
+    @Column(name = "raw_data")
     private String rawData;
 }

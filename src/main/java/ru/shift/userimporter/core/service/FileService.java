@@ -8,9 +8,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import ru.shift.userimporter.config.StorageProperties;
 import ru.shift.userimporter.core.exception.ConflictException;
-import ru.shift.userimporter.core.model.FileMeta;
+import ru.shift.userimporter.core.model.UploadedFile;
 import ru.shift.userimporter.core.model.FileStatus;
-import ru.shift.userimporter.core.repository.FileMetaRepository;
+import ru.shift.userimporter.core.repository.UploadedFileRepository;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -24,7 +24,7 @@ import java.util.UUID;
 public class FileService {
 
     private final StorageProperties props;
-    private final FileMetaRepository repo;
+    private final UploadedFileRepository repo;
 
     @Transactional
     public Integer upload(MultipartFile file) {
@@ -42,7 +42,7 @@ public class FileService {
             Files.copy(file.getInputStream(), target);
 
             /* 3. создаём запись */
-            FileMeta meta = new FileMeta();
+            UploadedFile meta = new UploadedFile();
             meta.setOriginalFilename(file.getOriginalFilename());
             meta.setStoragePath(target.toString());
             meta.setHash(sha1);
