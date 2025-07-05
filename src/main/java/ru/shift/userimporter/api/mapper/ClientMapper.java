@@ -16,7 +16,7 @@ public interface ClientMapper {
     @Mapping(target = "updateTime",   source = "updatedAt")
     ClientResponse toDto(Client client);
 
-    List<ClientResponse> toDto(List<Client> entities);
+    List<ClientResponse> toDto(List<Client> clients);
 
     default String map(OffsetDateTime time) {
         return Optional.ofNullable(time)
