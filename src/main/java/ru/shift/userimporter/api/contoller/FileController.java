@@ -1,30 +1,51 @@
 package ru.shift.userimporter.api.contoller;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.validation.annotation.Validated;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
-import ru.shift.userimporter.api.dto.ClientResponse;
-import ru.shift.userimporter.api.mapper.ClientMapper;
-import ru.shift.userimporter.core.service.ClientService;
-
+import org.springframework.web.multipart.MultipartFile;
+import ru.shift.userimporter.api.dto.DetailedFileStatisticDto;
+import ru.shift.userimporter.api.dto.FileIdResponse;
+import ru.shift.userimporter.api.dto.FileResponseDto;
 import java.util.List;
 
+import ru.shift.userimporter.core.model.FileStatus;
+import ru.shift.userimporter.core.service.FileService;
+import ru.shift.userimporter.core.service.StatisticService;
+import org.springframework.validation.annotation.Validated;
+import ru.shift.userimporter.core.service.FileProcessingService;
+
 @RestController
-@RequestMapping("/api/v1/clients")
-@Validated
+@RequestMapping("/files")
 @RequiredArgsConstructor
-public class ClientController {
+@Validated
+public class FileController {
 
-    private final ClientService  service;
-    private final ClientMapper mapper;
+    private final FileService fileService;
+    private final StatisticService statService;
+    private final FileProcessingService procService;
 
-    @GetMapping
-    public List<ClientResponse> getClients(
-            @RequestParam(required = false) String phone,
-            @RequestParam(required = false) String name,
-            @RequestParam(required = false) String lastName,
-            @RequestParam(required = false) String email)
-    {
-        return mapper.toDto(service.findClients(phone, name, lastName, email));
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseStatus(HttpStatus.CREATED)
+    public FileIdResponse upload(@RequestPart("file") MultipartFile file){
+        return new FileIdResponse(fileService.upload(file));
+    }
+
+    @PostMapping("/{fileId}/processing")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void startProcessing(@PathVariable Integer fileId) {
+        procService.startAsync(fileId);
+    }
+
+    @GetMapping("/{fileId}/statistics")
+    public DetailedFileStatisticDto detailed(@PathVariable Integer fileId) {
+        return statService.detailed(fileId);
+    }
+
+    @GetMapping("/statistics")
+    public List<FileResponseDto> getFileStatistics(
+            @RequestParam(value = "status", required = false) FileStatus status) {
+        return statService.list(status);
     }
 }

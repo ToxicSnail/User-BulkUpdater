@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.shift.userimporter.api.dto.ClientResponse;
+import ru.shift.userimporter.api.mapper.ClientMapper;
 import ru.shift.userimporter.core.service.ClientService;
 
 import java.util.List;
@@ -14,7 +15,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ClientController {
 
-    private final ClientService clientService;
+    private final ClientService  service;
+    private final ClientMapper mapper;
 
     @GetMapping
     public List<ClientResponse> getClients(
@@ -22,7 +24,7 @@ public class ClientController {
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String lastName,
             @RequestParam(required = false) String email)
-            {
-                return clientService.getClients(phone, name, lastName, email);
-            }
+    {
+        return mapper.toDto(service.findClients(phone, name, lastName, email));
+    }
 }
