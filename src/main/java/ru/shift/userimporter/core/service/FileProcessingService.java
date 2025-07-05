@@ -25,8 +25,8 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class FileProcessingService {
 
-    private final FileMetaRepository        fileRepo;
-    private final ClientRepository          clientRepo;
+    private final FileMetaRepository fileRepo;
+    private final ClientRepository clientRepo;
     private final ProcessingErrorRepository errRepo;
     private final ObjectProvider<FileProcessingService> self;
 
@@ -67,8 +67,19 @@ public class FileProcessingService {
         try (BufferedReader br = Files.newBufferedReader(path)) {
             String line;
             while ((line = br.readLine()) != null) {
-                if (line.isBlank()) continue;
-                total++;
+                total++;                              // считаем строку сразу
+
+                if (line.isBlank()) {                 // пустая = ошибка
+                    ProcessingError pe = new ProcessingError();
+                    pe.setFile(meta);
+                    pe.setLineNumber(total);
+                    pe.setErrorMessage("EMPTY_LINE");
+                    pe.setRawData(""); 
+                    errRepo.save(pe);
+
+                    invalid++;
+                    continue;
+                }
 
                 try {
                     Client parsed = ClientCsvParser.parse(line);    // вынес в парсер
@@ -97,10 +108,8 @@ public class FileProcessingService {
                     invalid++;
                 }
             }
-            meta.setStatus(FileStatus.DONE);
         } catch (Exception ex) {
-            log.error("processing failed for file {}", meta.getId(), ex);
-            meta.setStatus(FileStatus.FAILED);
+            throw new IllegalStateException("IO error while processing file", ex);
         }
         return new int[]{total, inserted, updated, invalid};
     }
