@@ -2,7 +2,7 @@ package ru.shift.userimporter.core.service;
 
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ValidationException;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.scheduling.annotation.Async;
@@ -12,7 +12,6 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.shift.userimporter.core.exception.LineValidator;
 import ru.shift.userimporter.core.model.*;
 import ru.shift.userimporter.core.repository.*;
-import ru.shift.userimporter.core.service.ClientCsvParser;
 
 import java.io.BufferedReader;
 import java.nio.file.Files;
@@ -51,17 +50,16 @@ public class FileProcessingService {
         FileMeta meta = fileRepo.findById(fileId).orElseThrow();
         Path path = Path.of(meta.getStoragePath());
 
-        int[] cnt = readAndProcessFile(path, meta);
+        ProcessStats s = readAndProcessFile(path, meta);
 
-        meta.setTotalRows(cnt[0]);
-        meta.setProcessedRows(cnt[1] + cnt[2] + cnt[3]);
-        meta.setValidRows(cnt[1]);
-        meta.setInvalidRows(cnt[3]);
-
+        meta.setTotalRows(s.getTotal());
+        meta.setProcessedRows(s.getInserted() + s.getUpdated() + s.getInvalid());
+        meta.setValidRows(s.getInserted());
+        meta.setInvalidRows(s.getInvalid());
         fileRepo.save(meta);
     }
 
-    private int[] readAndProcessFile(Path path, FileMeta meta) {
+    private ProcessStats readAndProcessFile(Path path, FileMeta meta) {
         int total = 0, inserted = 0, updated = 0, invalid = 0;
 
         try (BufferedReader br = Files.newBufferedReader(path)) {
@@ -69,14 +67,7 @@ public class FileProcessingService {
             while ((line = br.readLine()) != null) {
                 total++;                              // считаем строку сразу
 
-                if (line.isBlank()) {                 // пустая = ошибка
-                    ProcessingError pe = new ProcessingError();
-                    pe.setFile(meta);
-                    pe.setLineNumber(total);
-                    pe.setErrorMessage("EMPTY_LINE");
-                    pe.setRawData(""); 
-                    errRepo.save(pe);
-
+                if (line.isBlank()) {
                     invalid++;
                     continue;
                 }
@@ -108,9 +99,36 @@ public class FileProcessingService {
                     invalid++;
                 }
             }
+            meta.setStatus(FileStatus.DONE);
         } catch (Exception ex) {
-            throw new IllegalStateException("IO error while processing file", ex);
+            log.error("processing failed for file {}", meta.getId(), ex);
+            meta.setStatus(FileStatus.FAILED);
         }
-        return new int[]{total, inserted, updated, invalid};
+
+        return new ProcessStats(total, inserted, updated, invalid);
+    }
+
+    private Client parseLine(String line) {
+        String[] f   = line.split(",", -1);
+        LineValidator.Err err = LineValidator.validate(f);
+        if (err != null) throw new ValidationException(err.name());
+
+        Client c = new Client();
+        c.setLastName(f[0]);
+        c.setFirstName(f[1]);
+        c.setMiddleName(f[2].isBlank() ? null : f[2]);
+        c.setEmail(f[3]);
+        c.setPhone(f[4]);
+        c.setBirthDate(LocalDate.parse(f[5]));
+        return c;
+    }
+
+    @Getter
+    @AllArgsConstructor
+    private static class ProcessStats {
+        private final int total;
+        private final int inserted;
+        private final int updated;
+        private final int invalid;
     }
 }
