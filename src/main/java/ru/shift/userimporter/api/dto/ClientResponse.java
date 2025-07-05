@@ -1,7 +1,10 @@
 package ru.shift.userimporter.api.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Builder;
 import lombok.Value;
+
+import java.time.OffsetDateTime;
 
 @Value
 @Builder
@@ -13,6 +16,9 @@ public class ClientResponse {
     String  middleName;
     String  email;
     String  birthdate;
-    String  creationTime;
-    String  updateTime;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
+    OffsetDateTime creationTime;
+
+    OffsetDateTime  updateTime;
 }
