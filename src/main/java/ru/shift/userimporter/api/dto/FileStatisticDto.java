@@ -1,7 +1,7 @@
 package ru.shift.userimporter.api.dto;
 
 public record FileStatisticDto(
-        Integer insertedLinesCount,
-        Integer updatedLinesCount,
-        Integer errorProcessedLinesCount
+        int insertedLinesCount,
+        int updatedLinesCount,
+        int errorProcessedLinesCount
 ) {}

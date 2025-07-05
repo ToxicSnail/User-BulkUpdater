@@ -1,3 +1,3 @@
 package ru.shift.userimporter.api.dto;
 
-public record FileIdResponse(Integer fileId) {}
+public record FileIdResponse(int fileId) {}

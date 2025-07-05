@@ -8,9 +8,9 @@ import ru.shift.userimporter.core.model.FileStatus;
 @Builder
 public class FileResponseDto {
 
-    Integer     fileId;
+    int     fileId;
     FileStatus  status;
 
     FileStatisticDto statistic;
-    Integer     hashCode;
+    int     hashCode;
 }
