@@ -1,0 +1,27 @@
+package ru.shift.userimporter.core.service;
+
+import jakarta.validation.ValidationException;
+import ru.shift.userimporter.core.exception.LineValidator;
+import ru.shift.userimporter.core.model.Client;
+
+import java.time.LocalDate;
+
+public final class ClientCsvParser {
+
+    private ClientCsvParser() {}
+
+    public static Client parse(String line) {
+        String[] f   = line.split(",", -1);
+        LineValidator.Err err = LineValidator.validate(f);
+        if (err != null) throw new ValidationException(err.name());
+
+        Client c = new Client();
+        c.setLastName(f[0]);
+        c.setFirstName(f[1]);
+        c.setMiddleName(f[2].isBlank() ? null : f[2]);
+        c.setEmail(f[3]);
+        c.setPhone(f[4]);
+        c.setBirthDate(LocalDate.parse(f[5]));
+        return c;
+    }
+}

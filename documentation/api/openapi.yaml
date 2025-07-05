@@ -1,0 +1,386 @@
+openapi: 3.0.1
+info:
+  title: Client Service
+  description: Микросервис клиентов.
+  version: v1.0
+servers:
+  - url: http://localhost:8080
+    description: Generated server url
+paths:
+  /files/{fileId}/statistics:
+    get:
+      tags:
+        - Работа с файлом
+      description: |
+        Получение детальной статистики об обработке файла
+      operationId: getDetailedFileStatistic
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Успешная обработка
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DetailedFileStatistic"
+        "500":
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "400":
+          description: Ошибка клиента
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /files/statistics:
+    get:
+      tags:
+        - Работа с файлом
+      description: |
+        Получение информации о файлах
+      operationId: getFileStatistic
+      parameters:
+        - name: status
+          in: query
+          description: Статус файла
+          required: false
+          schema:
+            type: string
+            enum:
+              - NEW
+              - IN_PROGRESS
+              - DONE
+              - FAILED
+      responses:
+        "200":
+          description: Успешная обработка
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FileResponse"
+        "500":
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "400":
+          description: Ошибка клиента
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /files:
+    post:
+      tags:
+        - Работа с файлом
+      description: |
+        Добавление файла в базу
+      operationId: sendFile
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              required:
+                - file
+              type: object
+              properties:
+                file:
+                  type: string
+                  description: Файл с данными
+                  format: binary
+      responses:
+        "201":
+          description: Успешная обработка
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FileIdResponse"
+        "500":
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "400":
+          description: Ошибка клиента
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Конфликт, файл уже существует
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /files/{fileId}/processing:
+    post:
+      tags:
+        - Работа с файлом
+      description: |
+        Запуск процессинга файла
+      operationId: processing
+      parameters:
+        - name: fileId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Успешная обработка
+        "500":
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "400":
+          description: Ошибка клиента
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Объект не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /clients:
+    get:
+      tags:
+        - Работа с клиентами
+      description: |
+        Получения информации о клиентах в базе
+      operationId: getClients
+      parameters:
+        - name: phone
+          in: query
+          description: Номер телефона
+          required: false
+          schema:
+            type: integer
+            format: int64
+        - name: name
+          in: query
+          description: Имя
+          required: false
+          schema:
+            type: string
+        - name: lastName
+          in: query
+          description: Фамилия
+          required: false
+          schema:
+            type: string
+        - name: email
+          in: query
+          description: Адрес электронной почты
+          required: false
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Максимальное количество клиентов в ответе
+          required: false
+          schema:
+            minimum: 1
+            type: integer
+            format: int32
+            default: 100
+        - name: offset
+          in: query
+          description: Смещение в результирующем наборе клиентов
+          required: false
+          schema:
+            minimum: 0
+            type: integer
+            format: int32
+            default: 0
+      responses:
+        "200":
+          description: Успешная обработка
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ClientResponse"
+        "500":
+          description: Ошибка сервера
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "400":
+          description: Ошибка клиента
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+components:
+  schemas:
+    FileIdResponse:
+      required:
+        - fileId
+      type: object
+      properties:
+        fileId:
+          type: string
+          description: Идентификатор файла
+    FileResponse:
+      required:
+        - fileId
+        - hashCode
+        - status
+      type: object
+      properties:
+        fileId:
+          type: string
+          description: Идентификатор файла
+        status:
+          type: string
+          description: |-
+           Статус файла. Возможные значения:
+            NEW - Новый файл
+            IN_PROGRESS - Файл в обработке
+            DONE - Обработка файла успешно завершена
+            FAILED - Не удалось обработать файл
+          enum:
+            - NEW
+            - IN_PROGRESS
+            - DONE
+            - FAILED
+        statistic:
+          $ref: "#/components/schemas/FileStatistic"
+        hashCode:
+          type: integer
+          description: Хеш-код файла
+          format: int32
+      description: информация о файлах
+    FileStatistic:
+      type: object
+      properties:
+        insertedLinesCount:
+          type: integer
+          description: Количество успешно добавленных строк
+          format: int32
+        updatedLinesCount:
+          type: integer
+          description: Количество успешно обновлённых строк
+          format: int32
+        errorProcessedLinesCount:
+          type: integer
+          description: Количество строк с ошибкой добавления/обновления
+          format: int32
+      description: Информация о статистике по файлу
+    ProcessingError:
+      type: object
+      properties:
+        lineNumber:
+          type: number
+          description: Номер строки с ошибкой при обработке
+          format: int32
+        errorCode:
+          type: string
+          enum:
+            - INVALID_FORMAT
+            - INVALID_NAME
+            - INVALID_LAST_NAME
+            - INVALID_MIDDLE_NAME
+            - INVALID_EMAIL
+            - INVALID_PHONE
+            - INVALID_BIRTHDATE
+          description: |- 
+           Код ошибки. Возможные значения:
+           * INVALID_FORMAT - Невалидная строка, не поддаётся парсингу;
+           * INVALID_NAME - Ошибка в имени клиента;
+           * INVALID_LAST_NAME - Ошибка в фамилии клиента;
+           * INVALID_MIDDLE_NAME - Ошибка в отчестве клиента;
+           * INVALID_EMAIL - Ошибка в адресе эл. почты;
+           * INVALID_PHONE - Ошибка в номере телефона;
+           * INVALID_BIRTHDATE - Ошибка в дате рождения;
+        errorMessage:
+          type: string
+          description: Описание ошибки
+    DetailedFileStatistic:
+      type: object
+      properties:
+        insertedLinesCount:
+          type: integer
+          description: Количество успешно добавленных строк
+          format: int32
+        updatedLinesCount:
+          type: integer
+          description: Количество успешно обновлённых строк
+          format: int32
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProcessingError"
+      description: Информация о статистике по файлу
+    ClientResponse:
+      required:
+        - birthdate
+        - creationTime
+        - email
+        - lastName
+        - name
+        - phone
+      type: object
+      properties:
+        phone:
+          type: integer
+          description: Номер телефона
+          format: int64
+          example: 79997290010
+        name:
+          type: string
+          description: Имя
+          example: Иван
+        lastName:
+          type: string
+          description: Фамилия
+          example: Иванов
+        middleName:
+          type: string
+          description: Отчество
+          example: Иванович
+        email:
+          type: string
+          description: Адрес электронной почты
+          example: i.ivanov@shift.ru
+        birthdate:
+          type: string
+          description: Дата рождения
+          format: date
+          example: 2000-07-30
+        creationTime:
+          type: string
+          description: Дата и время добавления клиента в базу
+          format: date-time
+        updateTime:
+          type: string
+          description: Дата и время добавления последнего обновления клиента в базе
+          format: date-time
+      description: Информация о клиентах
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Сообщение об ошибке
+      description: "Объект, содержащий информацию об ошибке"
