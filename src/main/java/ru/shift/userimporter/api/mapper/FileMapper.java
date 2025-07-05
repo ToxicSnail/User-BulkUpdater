@@ -5,6 +5,7 @@ import org.mapstruct.Mapping;
 import ru.shift.userimporter.api.dto.*;
 import ru.shift.userimporter.core.model.FileMeta;
 import ru.shift.userimporter.core.model.ProcessingError;
+import ru.shift.userimporter.api.dto.FileStatisticDto;
 
 @Mapper(componentModel = "spring")
 public interface FileMapper {
@@ -30,15 +31,13 @@ public interface FileMapper {
         int processed = m.getProcessedRows() == null ? 0 : m.getProcessedRows();
         int updated  = processed - inserted - invalid;
 
+        FileStatisticDto stat = new FileStatisticDto(inserted, updated, invalid);
+
         return FileResponseDto.builder()
                 .fileId(m.getId())
                 .status(m.getStatus())
                 .hashCode(m.getHash().hashCode())
-                .statistic(FileResponseDto.Stat.builder()
-                        .insertedLinesCount(inserted)
-                        .updatedLinesCount(updated)
-                        .errorProcessedLinesCount(invalid)
-                        .build())
+                .statistic(stat)
                 .build();
     }
 }

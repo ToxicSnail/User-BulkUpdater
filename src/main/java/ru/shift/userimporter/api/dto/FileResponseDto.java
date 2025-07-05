@@ -11,14 +11,6 @@ public class FileResponseDto {
     Integer     fileId;
     FileStatus  status;
 
-    Stat        statistic;
+    FileStatisticDto statistic;
     Integer     hashCode;
-
-    @Value
-    @Builder
-    public static class Stat {
-        Integer insertedLinesCount;
-        Integer updatedLinesCount;
-        Integer errorProcessedLinesCount;
-    }
 }
