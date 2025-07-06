@@ -13,7 +13,7 @@ import ru.shift.userimporter.core.model.FileStatus;
 import ru.shift.userimporter.core.repository.UploadedFileRepository;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
@@ -27,21 +27,31 @@ public class FileService {
     private final UploadedFileRepository repo;
 
     @Transactional
-    public Integer upload(MultipartFile file) {
+    public int upload(MultipartFile file) {
         try {
-            /* 1. hash + дубликаты */
-            String sha1 = DigestUtils.sha1Hex(file.getInputStream());
+            /* 1. копируем на диск */
+            Path dir = props.getLocation();
+            Files.createDirectories(dir);
+
+            Path target = dir.resolve(
+                    UUID.randomUUID() + "_" + file.getOriginalFilename()
+            );
+            try (InputStream in = file.getInputStream()) {
+                Files.copy(in, target);
+            }
+
+            /* 2. считаем SHA-1 */
+            String sha1;
+            try (InputStream in = Files.newInputStream(target)) {
+                sha1 = DigestUtils.sha1Hex(in);
+            }
+
+            /* 3. проверяем дубликаты */
             repo.findByHash(sha1).ifPresent(f -> {
                 throw new ConflictException("Файл уже был загружен");
             });
 
-            /* 2. копируем на диск */
-            Path dir = props.getLocation();
-            Files.createDirectories(dir);
-            Path target = dir.resolve(UUID.randomUUID() + "_" + file.getOriginalFilename());
-            Files.copy(file.getInputStream(), target);
-
-            /* 3. создаём запись */
+            /* 4. создаём запись */
             UploadedFile meta = new UploadedFile();
             meta.setOriginalFilename(file.getOriginalFilename());
             meta.setStoragePath(target.toString());
@@ -49,8 +59,8 @@ public class FileService {
             meta.setStatus(FileStatus.NEW);
 
             return repo.save(meta).getId();
-        } catch (IOException e) {
-            throw new UncheckedIOException("Не удалось сохранить файл", e);
+        } catch (IOException ex) {
+            throw new RuntimeException("Не удалось сохранить файл", ex);
         }
     }
 }
