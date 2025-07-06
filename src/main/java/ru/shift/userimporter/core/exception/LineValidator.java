@@ -4,6 +4,7 @@ import lombok.Getter;
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.regex.Pattern;
+import java.time.format.DateTimeParseException;
 
 /**
  * Валидация одной строки CSV‑файла.
@@ -47,7 +48,7 @@ public final class LineValidator {
         try {
             LocalDate bd = LocalDate.parse(f[5]);
             if (Period.between(bd, LocalDate.now()).getYears() < 18) return Err.INVALID_BIRTHDATE;
-        } catch (Exception e) {
+        } catch (DateTimeParseException ex) {
             return Err.INVALID_BIRTHDATE;
         }
         return null;
