@@ -9,7 +9,9 @@ import ru.shift.userimporter.api.dto.ProcessingErrorDto;
 import ru.shift.userimporter.core.model.ProcessingError;
 import ru.shift.userimporter.core.model.UploadedFile;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
 public interface FileMapper {
@@ -46,7 +48,11 @@ public interface FileMapper {
     DetailedFileStatisticDto toDetailedDto(UploadedFile file);
 
     default List<ProcessingErrorDto> mapErrors(List<ProcessingError> src) {
-        return src == null ? List.of() :
-                src.stream().map(this::toErrorDto).toList();
+        if (src == null || src.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return src.stream()
+                .map(this::toErrorDto)
+                .collect(Collectors.toList());
     }
 }
