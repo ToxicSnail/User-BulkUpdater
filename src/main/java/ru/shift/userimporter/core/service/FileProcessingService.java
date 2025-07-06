@@ -64,16 +64,16 @@ public class FileProcessingService {
     }
 
     private ProcessStats readAndProcessFile(Path path, UploadedFile file) {
-        int total = 0, inserted = 0, updated = 0, invalid = 0;
+        int inserted = 0, updated = 0;
+        int rowNum = 0;
 
         try (BufferedReader br = Files.newBufferedReader(path)) {
             String line;
             while ((line = br.readLine()) != null) {
-                total++;
+                rowNum++;
 
                 if (line.isBlank()) {
-                    registerError(file, total, ErrorCode.EMPTY_LINE, "");
-                    invalid++;
+                    registerError(file, rowNum, ErrorCode.EMPTY_LINE, "");
                     continue;
                 }
 
@@ -82,12 +82,11 @@ public class FileProcessingService {
                     parsed = parser.parse(line);
                 } catch (ValidationException ex) {
                     ErrorCode code = ErrorCode.valueOf(ex.getMessage());
-                    registerError(file, total, code, line);
-                    invalid++;
+                    registerError(file, rowNum, code, line);
                     continue;
                 }
-                
-                
+
+
                 Optional<Client> existing = clientRepo.findByPhone(parsed.getPhone());
                 if (existing.isPresent()) {
                         Client stored = existing.get();
@@ -109,7 +108,7 @@ public class FileProcessingService {
             file.setStatus(FileStatus.FAILED);
         }
 
-        return new ProcessStats(total, inserted, updated, invalid);
+        return new ProcessStats(inserted, updated);
     }
     private void registerError(UploadedFile file,
                                int rowNumber,
@@ -126,9 +125,7 @@ public class FileProcessingService {
     @Getter
     @AllArgsConstructor
     private static class ProcessStats {
-        private final int total;
         private final int inserted;
         private final int updated;
-        private final int invalid;
     }
 }
