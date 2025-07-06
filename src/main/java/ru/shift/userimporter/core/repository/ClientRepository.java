@@ -11,10 +11,6 @@ import java.util.Optional;
 public interface ClientRepository extends JpaRepository<Client, Integer> {
     Optional<Client> findByPhone(String phone);
 
-    //deepseak написал JPQL-запрос, который выбирает клиентов,
-    // оставляя условие равенства по каждому фильтру лишь тогда,
-    // когда соответствующий параметр не null/пустой.
-    //иначе была 500 с Unexpected error
     @Query("""
            SELECT c
            FROM   Client c
