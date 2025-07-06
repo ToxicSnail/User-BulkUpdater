@@ -17,10 +17,4 @@ public interface ClientMapper {
     ClientResponse toDto(Client client);
 
     List<ClientResponse> toDto(List<Client> clients);
-
-    default String map(OffsetDateTime time) {
-        return Optional.ofNullable(time)
-                .map(OffsetDateTime::toString)
-                .orElse(null);
-    }
 }
