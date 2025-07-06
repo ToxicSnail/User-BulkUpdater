@@ -21,7 +21,6 @@ import ru.shift.userimporter.core.repository.UploadedFileRepository;
 import java.io.BufferedReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.LocalDate;
 import java.util.Optional;
 
 @Slf4j
@@ -67,35 +66,37 @@ public class FileProcessingService {
         try (BufferedReader br = Files.newBufferedReader(path)) {
             String line;
             while ((line = br.readLine()) != null) {
-                total++;                              // считаем строку сразу
+                total++;
 
                 if (line.isBlank()) {
-                    registerError(file, total, LineValidator.Err.EMPTY_LINE, "");
+                    registerError(file, total, LineValidator.Err.INVALID_FORMAT, line);
                     invalid++;
                     continue;
                 }
 
+                Client parsed;
                 try {
-                    Client parsed = ClientCsvParser.parse(line);    // вынес в парсер
-
-                    Optional<Client> storedOpt = clientRepo.findByPhone(parsed.getPhone());
-                    if (storedOpt.isPresent()) {
-                        Client stored = storedOpt.get();
-                        stored.setFirstName(parsed.getFirstName());
-                        stored.setLastName(parsed.getLastName());
-                        stored.setMiddleName(parsed.getMiddleName());
-                        stored.setEmail(parsed.getEmail());
-                        stored.setBirthDate(parsed.getBirthDate());
-                        clientRepo.save(stored);
-                        updated++;
-                    } else {
-                        clientRepo.save(parsed);
-                        inserted++;
-                    }
+                    parsed = ClientCsvParser.parse(line);
                 } catch (ValidationException ex) {
                     LineValidator.Err code = LineValidator.Err.valueOf(ex.getMessage());
                     registerError(file, total, code, line);
                     invalid++;
+                    continue;
+                }
+
+                Optional<Client> storedOpt = clientRepo.findByPhone(parsed.getPhone());
+                if (storedOpt.isPresent()) {
+                    Client stored = storedOpt.get();
+                    stored.setFirstName(parsed.getFirstName());
+                    stored.setLastName(parsed.getLastName());
+                    stored.setMiddleName(parsed.getMiddleName());
+                    stored.setEmail(parsed.getEmail());
+                    stored.setBirthDate(parsed.getBirthDate());
+                    clientRepo.save(stored);
+                    updated++;
+                } else {
+                    clientRepo.save(parsed);
+                    inserted++;
                 }
             }
 
@@ -107,7 +108,6 @@ public class FileProcessingService {
 
         return new ProcessStats(total, inserted, updated, invalid);
     }
-
     private void registerError(UploadedFile file,
                                int rowNumber,
                                LineValidator.Err code,
@@ -119,25 +119,8 @@ public class FileProcessingService {
         pe.setErrorCode(code.name());
         pe.setErrorMessage(code.getDescription()); // у enum Err есть поле description
         pe.setRawData(rawData);
-
         errRepo.save(pe);
     }
-
-    private Client parseLine(String line) {
-        String[] f   = line.split(",", -1);
-        LineValidator.Err err = LineValidator.validate(f);
-        if (err != null) throw new ValidationException(err.name());
-
-        Client c = new Client();
-        c.setLastName(f[0]);
-        c.setFirstName(f[1]);
-        c.setMiddleName(f[2].isBlank() ? null : f[2]);
-        c.setEmail(f[3]);
-        c.setPhone(f[4]);
-        c.setBirthDate(LocalDate.parse(f[5]));
-        return c;
-    }
-
     @Getter
     @AllArgsConstructor
     private static class ProcessStats {
