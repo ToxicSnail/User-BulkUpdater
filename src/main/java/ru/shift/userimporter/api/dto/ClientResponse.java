@@ -20,5 +20,6 @@ public class ClientResponse {
     @JsonFormat(shape = JsonFormat.Shape.STRING)
     OffsetDateTime creationTime;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     OffsetDateTime  updateTime;
 }
