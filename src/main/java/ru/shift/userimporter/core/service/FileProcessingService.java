@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -85,8 +86,12 @@ public class FileProcessingService {
                 }
 
                 Optional<Client> storedOpt = clientRepo.findByPhone(parsed.getPhone());
-                if (storedOpt.isPresent()) {
-                    Client stored = storedOpt.get();
+                try {
+                    clientRepo.save(parsed);
+                    inserted++;
+                } catch (DataIntegrityViolationException dup) {
+                    Client stored = clientRepo.findByPhone(parsed.getPhone())
+                            .orElseThrow();
                     stored.setFirstName(parsed.getFirstName());
                     stored.setLastName(parsed.getLastName());
                     stored.setMiddleName(parsed.getMiddleName());
@@ -94,9 +99,6 @@ public class FileProcessingService {
                     stored.setBirthDate(parsed.getBirthDate());
                     clientRepo.save(stored);
                     updated++;
-                } else {
-                    clientRepo.save(parsed);
-                    inserted++;
                 }
             }
 
