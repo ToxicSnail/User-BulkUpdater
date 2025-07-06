@@ -13,8 +13,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import ru.shift.userimporter.core.exception.ConflictException;
-import ru.shift.userimporter.core.exception.LineValidator;
-import ru.shift.userimporter.core.model.*;
+import ru.shift.userimporter.core.model.Client;
+import ru.shift.userimporter.core.model.ErrorCode;
+import ru.shift.userimporter.core.model.FileStatus;
+import ru.shift.userimporter.core.model.ProcessingError;
+import ru.shift.userimporter.core.model.UploadedFile;
 import ru.shift.userimporter.core.repository.ClientRepository;
 import ru.shift.userimporter.core.repository.ProcessingErrorRepository;
 import ru.shift.userimporter.core.repository.UploadedFileRepository;
@@ -28,11 +31,11 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class FileProcessingService {
-    private final UploadedFileRepository fileRepo;
-    private final ClientRepository       clientRepo;
-    private final ProcessingErrorRepository errRepo;
+    private final UploadedFileRepository            fileRepo;
+    private final ClientRepository                  clientRepo;
+    private final ProcessingErrorRepository         errRepo;
     private final ObjectProvider<FileProcessingService> self;
-    private final ClientCsvParser parser;
+    private final ClientCsvParser                   parser;
 
     @Transactional
     public void startAsync(Integer fileId) {
@@ -52,8 +55,7 @@ public class FileProcessingService {
     @Async("fileExecutor")
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void processAsync(UploadedFile file) {
-//        UploadedFile file = fileRepo.findById(fileId).orElseThrow();
-        Path         path = Path.of(file.getStoragePath());
+        Path path = Path.of(file.getStoragePath());
 
         ProcessStats st = readAndProcessFile(path, file);
 
@@ -71,7 +73,7 @@ public class FileProcessingService {
                 total++;
 
                 if (line.isBlank()) {
-                    registerError(file, total, LineValidator.Err.INVALID_FORMAT, line);
+                    registerError(file, total, ErrorCode.EMPTY_LINE, "");
                     invalid++;
                     continue;
                 }
@@ -80,13 +82,13 @@ public class FileProcessingService {
                 try {
                     parsed = parser.parse(line);
                 } catch (ValidationException ex) {
-                    LineValidator.Err code = LineValidator.Err.valueOf(ex.getMessage());
+                    ErrorCode code = ErrorCode.valueOf(ex.getMessage());
                     registerError(file, total, code, line);
                     invalid++;
                     continue;
                 }
 
-                Optional<Client> storedOpt = clientRepo.findByPhone(parsed.getPhone());
+                // Сначала пробуем вставить
                 try {
                     clientRepo.save(parsed);
                     inserted++;
@@ -102,7 +104,6 @@ public class FileProcessingService {
                     updated++;
                 }
             }
-
             file.setStatus(FileStatus.DONE);
         } catch (Exception ex) {
             log.error("processing failed for file {}", file.getId(), ex);
@@ -113,14 +114,13 @@ public class FileProcessingService {
     }
     private void registerError(UploadedFile file,
                                int rowNumber,
-                               LineValidator.Err code,
+                               ErrorCode code,
                                String rawData) {
-
         ProcessingError pe = new ProcessingError();
         pe.setFile(file);
         pe.setRowNumber(rowNumber);
         pe.setErrorCode(code.name());
-        pe.setErrorMessage(code.getDescription()); // у enum Err есть поле description
+        pe.setErrorMessage(code.getDescription()); // у enum ErrorCode есть поле description
         pe.setRawData(rawData);
         errRepo.save(pe);
     }
