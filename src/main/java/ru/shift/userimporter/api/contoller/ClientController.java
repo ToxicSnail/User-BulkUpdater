@@ -1,6 +1,7 @@
 package ru.shift.userimporter.api.contoller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.shift.userimporter.api.dto.ClientResponse;
@@ -23,8 +24,11 @@ public class ClientController {
             @RequestParam(required = false) String phone,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String lastName,
-            @RequestParam(required = false) String email)
+            @RequestParam(required = false) String email,
+            @RequestParam(defaultValue = "0")   int offset,
+            @RequestParam(defaultValue = "20")  int limit)
     {
-        return mapper.toDto(service.findClients(phone, name, lastName, email));
+        var pageable = PageRequest.of(offset, limit);
+        return mapper.toDto(service.findClients(phone, name, lastName, email, pageable));
     }
 }
