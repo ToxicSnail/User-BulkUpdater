@@ -1,5 +1,6 @@
 package ru.shift.userimporter.core.exception;
 
+import jakarta.validation.ValidationException;
 import lombok.Getter;
 import java.time.LocalDate;
 import java.time.Period;
@@ -31,27 +32,23 @@ public final class LineValidator {
         Err(String description) { this.description = description; }
     }
 
-    /**
-     * @return null если строка валидна, иначе Err-код
-     */
-    public static Err validate(String[] f) {
+    public static void validate(String[] f) {
         if (f == null || f.length == 0 || String.join("", f).isBlank()) {
-            return Err.EMPTY_LINE;
+            throw new ValidationException(Err.EMPTY_LINE.name());
         }
-        if (f.length != 6)                                 return Err.INVALID_FORMAT;
-        if (!NAME_RE.matcher(f[0]).matches())              return Err.INVALID_LAST_NAME;
-        if (!NAME_RE.matcher(f[1]).matches())              return Err.INVALID_NAME;
+        if (f.length != 6)                                 throw new ValidationException(Err.INVALID_FORMAT.name());
+        if (!NAME_RE.matcher(f[0]).matches())              throw new ValidationException(Err.INVALID_LAST_NAME.name());
+        if (!NAME_RE.matcher(f[1]).matches())              throw new ValidationException(Err.INVALID_NAME.name());
         if (!f[2].isBlank() && !NAME_RE.matcher(f[2]).matches())
-            return Err.INVALID_MIDDLE_NAME;
-        if (!EMAIL_RE.matcher(f[3]).matches())             return Err.INVALID_EMAIL;
-        if (!PHONE_RE.matcher(f[4]).matches())             return Err.INVALID_PHONE;
+            throw new ValidationException(Err.INVALID_MIDDLE_NAME.name());
+        if (!EMAIL_RE.matcher(f[3]).matches())             throw new ValidationException(Err.INVALID_EMAIL.name());
+        if (!PHONE_RE.matcher(f[4]).matches())             throw new ValidationException(Err.INVALID_PHONE.name());
         try {
             LocalDate bd = LocalDate.parse(f[5]);
-            if (Period.between(bd, LocalDate.now()).getYears() < 18) return Err.INVALID_BIRTHDATE;
+            if (Period.between(bd, LocalDate.now()).getYears() < 18) throw new ValidationException(Err.INVALID_BIRTHDATE.name());
         } catch (DateTimeParseException ex) {
-            return Err.INVALID_BIRTHDATE;
+            throw new ValidationException(Err.INVALID_BIRTHDATE.name());
         }
-        return null;
     }
 
     private LineValidator() {}

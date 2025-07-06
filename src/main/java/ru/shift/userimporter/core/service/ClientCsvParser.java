@@ -14,8 +14,7 @@ public class ClientCsvParser {
 
     public Client parse(String line) {
         String[] f   = line.split(",", -1);
-        LineValidator.Err err = LineValidator.validate(f);
-        if (err != null) throw new ValidationException(err.name());
+        LineValidator.validate(f);
 
         Client c = new Client();
         c.setLastName(f[0]);
