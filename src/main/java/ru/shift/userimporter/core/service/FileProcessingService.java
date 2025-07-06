@@ -45,13 +45,13 @@ public class FileProcessingService {
         file.setStatus(FileStatus.IN_PROGRESS);
         fileRepo.save(file);
 
-        self.getObject().processAsync(fileId);  //теперь processAsync идет так
+        self.getObject().processAsync(file);  //теперь processAsync идет так
     }
 
     @Async("fileExecutor")
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void processAsync(Integer fileId) {
-        UploadedFile file = fileRepo.findById(fileId).orElseThrow();
+    public void processAsync(UploadedFile file) {
+//        UploadedFile file = fileRepo.findById(fileId).orElseThrow();
         Path         path = Path.of(file.getStoragePath());
 
         ProcessStats st = readAndProcessFile(path, file);
