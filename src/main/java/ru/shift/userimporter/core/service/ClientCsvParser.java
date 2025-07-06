@@ -1,8 +1,7 @@
 package ru.shift.userimporter.core.service;
 
-import jakarta.validation.ValidationException;
 import org.springframework.stereotype.Component;
-import ru.shift.userimporter.core.exception.LineValidator;
+import ru.shift.userimporter.core.service.utils.validator.LineValidator;
 import ru.shift.userimporter.core.model.Client;
 
 import java.time.LocalDate;
