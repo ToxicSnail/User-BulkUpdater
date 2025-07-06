@@ -32,6 +32,7 @@ public class FileProcessingService {
     private final ClientRepository       clientRepo;
     private final ProcessingErrorRepository errRepo;
     private final ObjectProvider<FileProcessingService> self;
+    private final ClientCsvParser parser;
 
     @Transactional
     public void startAsync(Integer fileId) {
@@ -77,7 +78,7 @@ public class FileProcessingService {
 
                 Client parsed;
                 try {
-                    parsed = ClientCsvParser.parse(line);
+                    parsed = parser.parse(line);
                 } catch (ValidationException ex) {
                     LineValidator.Err code = LineValidator.Err.valueOf(ex.getMessage());
                     registerError(file, total, code, line);
