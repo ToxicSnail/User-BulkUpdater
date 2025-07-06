@@ -7,7 +7,6 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -78,7 +77,7 @@ public class FileProcessingService {
                     continue;
                 }
 
-                Client parsed;
+                final Client parsed;
                 try {
                     parsed = parser.parse(line);
                 } catch (ValidationException ex) {
@@ -87,22 +86,22 @@ public class FileProcessingService {
                     invalid++;
                     continue;
                 }
-
-                // Сначала пробуем вставить
-                try {
-                    clientRepo.save(parsed);
-                    inserted++;
-                } catch (DataIntegrityViolationException dup) {
-                    Client stored = clientRepo.findByPhone(parsed.getPhone())
-                            .orElseThrow();
-                    stored.setFirstName(parsed.getFirstName());
-                    stored.setLastName(parsed.getLastName());
-                    stored.setMiddleName(parsed.getMiddleName());
-                    stored.setEmail(parsed.getEmail());
-                    stored.setBirthDate(parsed.getBirthDate());
+                
+                
+                Optional<Client> existing = clientRepo.findByPhone(parsed.getPhone());
+                if (existing.isPresent()) {
+                        Client stored = existing.get();
+                        stored.setFirstName(parsed.getFirstName());
+                        stored.setLastName(parsed.getLastName());
+                        stored.setMiddleName(parsed.getMiddleName());
+                        stored.setEmail(parsed.getEmail());
+                        stored.setBirthDate(parsed.getBirthDate());
                     clientRepo.save(stored);
                     updated++;
-                }
+                    } else {
+                        clientRepo.save(parsed);
+                        inserted++;
+                    }
             }
             file.setStatus(FileStatus.DONE);
         } catch (Exception ex) {
