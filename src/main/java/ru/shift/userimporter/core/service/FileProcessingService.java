@@ -72,10 +72,6 @@ public class FileProcessingService {
             while ((line = br.readLine()) != null) {
                 rowNum++;
 
-                if (line.isBlank()) {
-                    registerError(file, rowNum, ErrorCode.EMPTY_LINE, "");
-                    continue;
-                }
 
                 final Client parsed;
                 try {
