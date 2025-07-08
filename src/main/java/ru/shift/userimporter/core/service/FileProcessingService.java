@@ -55,9 +55,7 @@ public class FileProcessingService {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void processAsync(UploadedFile file) {
         Path path = Path.of(file.getStoragePath());
-
         ProcessStats st = readAndProcessFile(path, file);
-
         file.setInsertedRows(st.getInserted());
         file.setUpdatedRows(st.getUpdated());
         fileRepo.save(file);
@@ -71,7 +69,10 @@ public class FileProcessingService {
             String line;
             while ((line = br.readLine()) != null) {
                 rowNum++;
-
+                if (line.isBlank()) {
+                    registerError(file, rowNum, ErrorCode.EMPTY_LINE, "");
+                    continue;
+                }
 
                 final Client parsed;
                 try {
@@ -82,29 +83,35 @@ public class FileProcessingService {
                     continue;
                 }
 
-
-                Optional<Client> existing = clientRepo.findByPhone(parsed.getPhone());
-                if (existing.isPresent()) {
-                        Client stored = existing.get();
-                        stored.setFirstName(parsed.getFirstName());
-                        stored.setLastName(parsed.getLastName());
-                        stored.setMiddleName(parsed.getMiddleName());
-                        stored.setEmail(parsed.getEmail());
-                        stored.setBirthDate(parsed.getBirthDate());
-                    clientRepo.save(stored);
-                    updated++;
-                    } else {
-                        clientRepo.save(parsed);
-                        inserted++;
-                    }
+                // вызываем в своей маленькой «свежей» транзакции
+                boolean wasInserted = self.getObject().upsertClient(parsed);
+                if (wasInserted) inserted++;
+                else           updated++;
             }
-            file.setStatus(FileStatus.DONE);
         } catch (Exception ex) {
             log.error("processing failed for file {}", file.getId(), ex);
             file.setStatus(FileStatus.FAILED);
         }
 
         return new ProcessStats(inserted, updated);
+    }
+    
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public boolean upsertClient(Client parsed) {
+        return clientRepo.findByPhone(parsed.getPhone())
+                .map(stored -> {
+                    stored.setFirstName(parsed.getFirstName());
+                    stored.setLastName( parsed.getLastName() );
+                    stored.setMiddleName(parsed.getMiddleName());
+                    stored.setEmail(     parsed.getEmail() );
+                    stored.setBirthDate(parsed.getBirthDate());
+                    clientRepo.save(stored);
+                    return false;
+                })
+                .orElseGet(() -> {
+                    clientRepo.save(parsed);
+                    return true;
+                });
     }
     private void registerError(UploadedFile file,
                                int rowNumber,
