@@ -9,10 +9,10 @@ import java.util.Optional;
 
 public interface UploadedFileRepository extends JpaRepository<UploadedFile, Integer> {
 
-    /** �?�?�?�?��?��� �?�?�+�>�����'�� ���? SHA-1 **/
+    /** Проверка дубликата по SHA-1 **/
     Optional<UploadedFile> findByHash(String hash);
 
-    /** �?�?�>�?�ؐ�?��� �"�����>�?�? ���? �?�'���'�?�?�? (�?�>�? �"��>�?�'�?�� `/files/statistics?status=`). **/
+    /** Получение файлов по статусу (для фильтрво  `/files/statistic?status=`) **/
     List<UploadedFile> findByStatus(FileStatus status);
 
     List<UploadedFile> findByStatusAndOwner(FileStatus status, String owner);

@@ -40,7 +40,7 @@ public class StatisticService {
                     ? repo.findByOwner(user.username())
                     : repo.findByStatusAndOwner(status, user.username());
         } else {
-            throw new EntityNotFoundException("File not found");
+            throw new EntityNotFoundException("Файл не найден или доступ запрещён");
         }
         return files
                 .stream()
@@ -51,12 +51,12 @@ public class StatisticService {
     private UploadedFile loadFileForUser(Integer fileId, SecurityUtils.CurrentUser user) {
         if (user.isAdmin() || user.isAuditor()) {
             return repo.findById(fileId)
-                    .orElseThrow(() -> new EntityNotFoundException("�������> �?�� �?�����?��?"));
+                    .orElseThrow(() -> new EntityNotFoundException("Файл не найден"));
         }
         if (user.isOperator()) {
             return repo.findByIdAndOwner(fileId, user.username())
-                    .orElseThrow(() -> new EntityNotFoundException("�������> �?�� �?�����?��?"));
+                    .orElseThrow(() -> new EntityNotFoundException("Файл не найден или недоступен"));
         }
-        throw new EntityNotFoundException("�������> �?�� �?�����?��?");
+        throw new EntityNotFoundException("Файл не найден или доступ запрещён");
     }
 }

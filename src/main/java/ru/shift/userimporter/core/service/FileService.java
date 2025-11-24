@@ -52,7 +52,7 @@ public class FileService {
 
             // 3. Проверяем дубликаты
             repo.findByHash(sha1).ifPresent(f -> {
-                throw new ConflictException("�������> �?��� �+�<�> �����?�?�?���?");
+                throw new ConflictException("Файл уже загружен");
             });
 
             // 4. Сохраняем метаданные
@@ -65,7 +65,7 @@ public class FileService {
 
             return repo.save(meta).getId();
         } catch (IOException ex) {
-            throw new RuntimeException("�?�� �?�?���>�?�?�? �?�?�:�?���?��'�? �\"�����>", ex);
+            throw new RuntimeException("Не удалось загрузить файл", ex);
         }
     }
 }

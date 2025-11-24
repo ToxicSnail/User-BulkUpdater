@@ -128,7 +128,7 @@ public class FileProcessingService {
         pe.setFile(file);
         pe.setRowNumber(rowNumber);
         pe.setErrorCode(code.name());
-        pe.setErrorMessage(code.getDescription()); // �? enum ErrorCode ��?�'�? ���?�>�� description
+        pe.setErrorMessage(code.getDescription()); // у enum ErrorCode есть поле description
         pe.setRawData(rawData);
         errRepo.save(pe);
     }
