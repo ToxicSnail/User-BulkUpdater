@@ -20,6 +20,7 @@ import ru.shift.userimporter.core.model.UploadedFile;
 import ru.shift.userimporter.core.repository.ClientRepository;
 import ru.shift.userimporter.core.repository.ProcessingErrorRepository;
 import ru.shift.userimporter.core.repository.UploadedFileRepository;
+import ru.shift.userimporter.core.service.security.SecurityUtils;
 
 import java.io.BufferedReader;
 import java.nio.file.Files;
@@ -35,20 +36,24 @@ public class FileProcessingService {
     private final ProcessingErrorRepository         errRepo;
     private final ObjectProvider<FileProcessingService> self;
     private final ClientCsvParser                   parser;
+    private final AccessPolicyService               policy;
 
     @Transactional
     public void startAsync(Integer fileId) {
-        UploadedFile file = fileRepo.findById(fileId)
+        SecurityUtils.CurrentUser user = SecurityUtils.currentUser();
+        UploadedFile file = loadFileForUser(fileId, user)
                 .orElseThrow(() -> new EntityNotFoundException("file not found"));
 
         if (file.getStatus() != FileStatus.NEW) {
             throw new ConflictException("processing already started");
         }
 
+        policy.assertFileProcessing(user, file);
+
         file.setStatus(FileStatus.IN_PROGRESS);
         fileRepo.save(file);
 
-        self.getObject().processAsync(file);  //теперь processAsync идет так
+        self.getObject().processAsync(file);  // запускаем асинхронно
     }
 
     @Async("fileExecutor")
@@ -58,6 +63,9 @@ public class FileProcessingService {
         ProcessStats st = readAndProcessFile(path, file);
         file.setInsertedRows(st.getInserted());
         file.setUpdatedRows(st.getUpdated());
+        if (file.getStatus() != FileStatus.FAILED) {
+            file.setStatus(FileStatus.DONE);
+        }
         fileRepo.save(file);
     }
 
@@ -83,7 +91,6 @@ public class FileProcessingService {
                     continue;
                 }
 
-                // вызываем в своей маленькой «свежей» транзакции
                 boolean wasInserted = self.getObject().upsertClient(parsed);
                 if (wasInserted) inserted++;
                 else           updated++;
@@ -121,7 +128,7 @@ public class FileProcessingService {
         pe.setFile(file);
         pe.setRowNumber(rowNumber);
         pe.setErrorCode(code.name());
-        pe.setErrorMessage(code.getDescription()); // у enum ErrorCode есть поле description
+        pe.setErrorMessage(code.getDescription()); // �? enum ErrorCode ��?�'�? ���?�>�� description
         pe.setRawData(rawData);
         errRepo.save(pe);
     }
@@ -130,5 +137,15 @@ public class FileProcessingService {
     private static class ProcessStats {
         private final int inserted;
         private final int updated;
+    }
+
+    private Optional<UploadedFile> loadFileForUser(Integer fileId, SecurityUtils.CurrentUser user) {
+        if (user.isAdmin() || user.isAuditor()) {
+            return fileRepo.findById(fileId);
+        }
+        if (user.isOperator()) {
+            return fileRepo.findByIdAndOwner(fileId, user.username());
+        }
+        return Optional.empty();
     }
 }

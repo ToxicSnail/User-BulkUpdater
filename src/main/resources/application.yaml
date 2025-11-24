@@ -22,3 +22,8 @@ spring:
 
 file-storage:
   location: uploads
+
+access-policy:
+  workday-start: "06:00"
+  workday-end: "22:00"
+  max-active-tasks-per-user: 1

@@ -38,6 +38,9 @@ public class UploadedFile {
     @Column(name = "updated_rows", nullable = false)
     private int updatedRows;
 
+    @Column(name = "owner", length = 100, nullable = false)
+    private String owner = "system";
+
     @OneToMany(mappedBy = "file", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProcessingError> errors = new ArrayList<>();
 

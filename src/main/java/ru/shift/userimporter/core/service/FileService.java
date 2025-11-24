@@ -11,6 +11,7 @@ import ru.shift.userimporter.core.exception.ConflictException;
 import ru.shift.userimporter.core.model.UploadedFile;
 import ru.shift.userimporter.core.model.FileStatus;
 import ru.shift.userimporter.core.repository.UploadedFileRepository;
+import ru.shift.userimporter.core.service.security.SecurityUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,11 +26,14 @@ public class FileService {
 
     private final StorageProperties props;
     private final UploadedFileRepository repo;
+    private final AccessPolicyService policy;
 
     @Transactional
     public int upload(MultipartFile file) {
         try {
-            /* 1. копируем на диск */
+            SecurityUtils.CurrentUser user = SecurityUtils.currentUser();
+            policy.checkWriteWindow(user);
+            // 1. Сохраняем файл
             Path dir = props.getLocation();
             Files.createDirectories(dir);
 
@@ -40,27 +44,28 @@ public class FileService {
                 Files.copy(in, target);
             }
 
-            /* 2. считаем SHA-1 */
+            // 2. SHA-1
             String sha1;
             try (InputStream in = Files.newInputStream(target)) {
                 sha1 = DigestUtils.sha1Hex(in);
             }
 
-            /* 3. проверяем дубликаты */
+            // 3. Проверяем дубликаты
             repo.findByHash(sha1).ifPresent(f -> {
-                throw new ConflictException("Файл уже был загружен");
+                throw new ConflictException("�������> �?��� �+�<�> �����?�?�?���?");
             });
 
-            /* 4. создаём запись */
+            // 4. Сохраняем метаданные
             UploadedFile meta = new UploadedFile();
             meta.setOriginalFilename(file.getOriginalFilename());
             meta.setStoragePath(target.toString());
             meta.setHash(sha1);
             meta.setStatus(FileStatus.NEW);
+            meta.setOwner(user.username());
 
             return repo.save(meta).getId();
         } catch (IOException ex) {
-            throw new RuntimeException("Не удалось сохранить файл", ex);
+            throw new RuntimeException("�?�� �?�?���>�?�?�? �?�?�:�?���?��'�? �\"�����>", ex);
         }
     }
 }

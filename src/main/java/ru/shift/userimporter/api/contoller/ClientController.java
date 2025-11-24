@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.shift.userimporter.api.dto.ClientResponse;
 import ru.shift.userimporter.api.mapper.ClientMapper;
 import ru.shift.userimporter.core.service.ClientService;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 
@@ -20,6 +21,7 @@ public class ClientController {
     private final ClientMapper mapper;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','AUDITOR')")
     public List<ClientResponse> getClients(
             @RequestParam(required = false) String phone,
             @RequestParam(required = false) String name,

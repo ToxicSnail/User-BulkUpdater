@@ -42,7 +42,8 @@ CREATE TABLE uploaded_files
         CONSTRAINT chk_status_value CHECK (status IN ('NEW', 'IN_PROGRESS', 'DONE', 'FAILED')),
     hash              VARCHAR(40)  NOT NULL,
     inserted_rows     INTEGER,
-    updated_rows      INTEGER
+    updated_rows      INTEGER,
+    owner             VARCHAR(100) NOT NULL DEFAULT 'system'
 );
 
 COMMENT ON TABLE uploaded_files IS 'Таблица для хранения информации о загруженных файлах';
